@@ -1,0 +1,308 @@
+<title>Viaggio Elroq</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: colonna unica su telefono; su schermo largo comandi a sinistra, risultati a destra */
+:root{
+  --bg:#f3f6f5; --panel:#ffffff; --fg:#14201d; --muted:#5b6b67; --line:#d9e2df;
+  --accent:#0e8a6a; --accent-soft:#d6efe7; --warn:#b45309; --charge:#2563eb; --terrain:#c9d6d2;
+  --f-display:"Space Grotesk",system-ui,sans-serif; --f-body:"Inter",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1715; --panel:#16211e; --fg:#e4eeeb; --muted:#93a6a1; --line:#2a3a36;
+  --accent:#34c79c; --accent-soft:#163a30; --warn:#f59e0b; --charge:#60a5fa; --terrain:#2b3c37; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1715; --panel:#16211e; --fg:#e4eeeb; --muted:#93a6a1; --line:#2a3a36;
+  --accent:#34c79c; --accent-soft:#163a30; --warn:#f59e0b; --charge:#60a5fa; --terrain:#2b3c37; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1100px;margin:0 auto;padding-block:20px 40px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px;margin-bottom:16px}
+h1{font-family:var(--f-display);font-size:1.7rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.route{font-family:var(--f-mono);font-size:.85rem;color:var(--muted)}
+.grid{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+h2{font-family:var(--f-display);font-size:1rem;margin:0 0 12px;font-weight:700}
+.ctl{display:grid;gap:14px}
+.field label{display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted);margin-bottom:4px}
+.field label b{font-family:var(--f-mono);color:var(--fg);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+input[type=time]{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg)}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-size:.9rem;padding:8px;border:0;background:transparent;color:var(--fg);cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--panel);font-weight:600}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.car{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;line-height:1.6}
+.car b{color:var(--fg)}
+.res{display:grid;gap:16px;min-width:0}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+@media (max-width:520px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--panel);padding:12px 14px}
+.kpi span{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.kpi b{font-family:var(--f-mono);font-size:1.35rem;font-weight:600;font-variant-numeric:tabular-nums}
+.kpi.main b{color:var(--accent)}
+.chart{width:100%;height:auto;display:block}
+.chart text{font-family:var(--f-mono);font-size:13px;fill:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.78rem;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:12px;height:3px;vertical-align:middle;margin-right:5px}
+ol.tl{list-style:none;margin:0;padding:0;display:grid}
+ol.tl li{display:grid;grid-template-columns:52px 1fr;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+ol.tl li:first-child{border-top:0}
+.t{font-family:var(--f-mono);font-weight:600;font-variant-numeric:tabular-nums}
+.stop .t{color:var(--charge)}
+.tl small{display:block;color:var(--muted);font-size:.82rem}
+.pill{display:inline-block;font-family:var(--f-mono);font-size:.75rem;padding:1px 7px;border-radius:99px;background:var(--accent-soft);color:var(--fg);margin-left:6px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.88rem;font-variant-numeric:tabular-nums}
+th,td{padding:7px 8px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-weight:600;color:var(--muted);font-size:.78rem}
+td{font-family:var(--f-mono)}
+td.best{background:var(--accent-soft);font-weight:600}
+td.now{outline:2px solid var(--accent);outline-offset:-2px}
+.note{font-size:.78rem;color:var(--muted);line-height:1.55}
+.err{color:var(--warn);font-weight:600}
+</style>
+
+<div class="wrap">
+<header>
+  <h1>Viaggio Elroq</h1>
+  <div class="route">Cattolica → Milano · 343,6 km · A14 + A1</div>
+</header>
+
+<div class="grid">
+  <section class="panel ctl" aria-label="Impostazioni">
+    <h2>Impostazioni</h2>
+    <div class="field"><label for="vel">Velocità autostrada <b id="velO"></b></label><input id="vel" type="range" min="90" max="130" step="5" value="120"></div>
+    <div class="field"><label for="temp">Temperatura esterna <b id="tempO"></b></label><input id="temp" type="range" min="-10" max="40" step="1" value="15"></div>
+    <div class="field"><label for="soc0">Batteria alla partenza <b id="soc0O"></b></label><input id="soc0" type="range" min="30" max="100" step="5" value="90"></div>
+    <div class="field"><label for="socF">Batteria minima all'arrivo <b id="socFO"></b></label><input id="socF" type="range" min="10" max="50" step="5" value="10"></div>
+    <div class="field"><label for="pax">Persone a bordo <b id="paxO"></b></label><input id="pax" type="range" min="1" max="5" step="1" value="1"></div>
+    <div class="field"><label for="ora">Ora di partenza</label><input id="ora" type="time" value="08:30"></div>
+    <div class="field"><label>Obiettivo</label>
+      <div class="seg" role="group" aria-label="Obiettivo">
+        <button id="obT" type="button" aria-pressed="true">Arrivare prima</button>
+        <button id="obC" type="button" aria-pressed="false">Spendere meno</button>
+      </div></div>
+    <div class="car"><b>Skoda Elroq 85</b> · motore APP550 210 kW<br>Batteria 77 kWh netti · DC fino a 175 kW<br>10→80% in circa 32 min su colonnina veloce</div>
+  </section>
+
+  <div class="res">
+    <div class="kpis" id="kpis"></div>
+    <section class="panel">
+      <h2>Batteria lungo il percorso</h2>
+      <svg class="chart" id="chart" viewBox="0 0 640 230" role="img" aria-label="Percentuale di batteria lungo il percorso"></svg>
+      <div class="legend"><span><i style="background:var(--accent)"></i>batteria %</span><span><i style="background:var(--charge)"></i>ricarica</span><span><i style="background:var(--terrain);height:8px"></i>altitudine (reale)</span></div>
+    </section>
+    <section class="panel">
+      <h2>Diario di viaggio</h2>
+      <ol class="tl" id="tl"></ol>
+    </section>
+    <section class="panel">
+      <h2>Tempo totale per velocità e temperatura</h2>
+      <div class="scroll"><table id="tab"></table></div>
+      <p class="note">Tra parentesi il numero di soste. In verde la velocità più rapida per ogni temperatura; il riquadro indica le impostazioni attuali.</p>
+    </section>
+    <p class="note">Percorso e altitudini reali da OpenStreetMap (OSRM) e EU-DEM (OpenTopoData). Batteria, potenza DC e tempi di ricarica da schede Skoda, ev-database ed evkx. Massa, Cx e rendimenti sono stime. Le aree di servizio sono reali, ma la loro posizione in km, la potenza delle colonnine e i prezzi sono indicativi.</p>
+  </div>
+</div>
+</div>
+
+<script>
+const PROFILO = [[0.0,7,31],[2.0,18,31],[4.39,21,43],[6.88,18,104],[9.36,45,104],[11.47,18,104],[13.74,21,104],[16.52,13,104],[18.53,13,104],[20.72,12,104],[22.82,9,97],[25.3,22,104],[27.36,19,104],[29.54,23,104],[31.64,20,104],[33.66,18,104],[35.94,15,104],[38.11,11,104],[40.52,12,104],[42.52,19,104],[44.75,19,104],[46.88,18,104],[49.08,19,104],[51.36,23,104],[53.5,20,104],[55.81,19,104],[57.86,15,104],[60.01,18,104],[62.06,18,104],[64.1,17,104],[66.15,16,104],[68.16,19,104],[70.19,19,104],[72.19,16,104],[74.3,15,104],[76.4,17,104],[78.44,24,104],[80.67,20,104],[82.68,20,104],[84.99,26,104],[87.07,27,104],[89.16,26,104],[91.55,29,104],[93.67,30,104],[95.7,31,104],[98.16,29,104],[100.36,36,104],[102.6,42,104],[105.17,42,104],[107.21,45,104],[109.29,53,104],[111.56,44,104],[113.73,39,104],[115.77,42,104],[117.81,47,104],[119.83,43,104],[122.07,54,104],[124.17,52,104],[126.2,56,90],[128.3,51,91],[130.36,44,90],[132.4,41,90],[134.41,34,90],[136.57,38,90],[138.58,39,95],[140.59,41,104],[142.61,49,104],[144.88,51,104],[146.89,54,104],[150.54,54,99],[153.53,58,104],[156.72,55,104],[158.8,51,104],[163.35,49,104],[165.42,49,104],[169.05,45,104],[172.09,44,104],[174.13,48,104],[176.26,42,104],[178.3,41,104],[180.48,43,104],[184.41,44,104],[187.63,42,104],[190.05,42,104],[192.15,41,104],[194.93,40,104],[197.53,38,104],[201.02,42,104],[203.1,37,104],[208.16,32,104],[210.65,42,104],[214.07,41,104],[216.13,39,104],[219.0,36,104],[221.15,41,104],[223.69,38,104],[227.18,42,104],[230.56,40,104],[232.59,46,104],[234.78,45,104],[236.84,45,104],[238.95,50,104],[240.98,49,104],[243.31,57,104],[245.77,58,104],[248.02,61,104],[251.62,57,104],[253.88,55,104],[257.03,50,104],[259.17,60,104],[261.39,63,104],[264.7,59,104],[267.1,58,104],[269.8,60,104],[271.96,60,104],[273.97,59,104],[276.38,53,104],[278.48,49,104],[281.1,51,104],[283.3,47,104],[285.53,48,104],[287.55,46,104],[289.65,50,104],[291.81,50,104],[294.83,63,104],[297.21,65,104],[299.47,65,104],[301.49,64,104],[303.75,68,104],[306.04,69,104],[310.44,73,104],[312.78,78,104],[314.92,79,104],[316.93,81,104],[319.4,82,104],[321.58,85,104],[323.77,76,104],[325.86,91,80],[328.23,93,83],[330.45,96,104],[332.48,98,72],[334.48,99,74],[336.51,107,67],[338.52,110,50],[340.62,117,40],[342.69,127,41],[343.65,130,21]]; // [km, quota m, velocità tipica OSRM km/h]
+const AUTO = {batt:77, massa:2100, cx:0.26, area:2.55, crr:0.0085, effT:0.88, effR:0.65, effDC:0.95,
+  curva:[[0,100],[10,135],[20,150],[30,140],[40,120],[50,100],[60,85],[70,72],[80,55],[90,32],[100,10]]};
+const KM_TOT = PROFILO[PROFILO.length-1][0];
+const COLONNINE = [
+  {nome:"A14 Area Rubicone", km:39, kw:150, prezzo:0.69},
+  {nome:"A14 Area Santerno (Imola)", km:92, kw:300, prezzo:0.79},
+  {nome:"A14 Area La Pioppa", km:113, kw:150, prezzo:0.69},
+  {nome:"A1 Area Secchia (Modena)", km:167, kw:300, prezzo:0.75},
+  {nome:"A1 Area Taro (Parma)", km:217, kw:150, prezzo:0.69},
+  {nome:"A1 Area Arda (Fiorenzuola)", km:256, kw:50, prezzo:0.59},
+  {nome:"A1 Area Somaglia (Lodi)", km:300, kw:300, prezzo:0.79},
+  {nome:"A1 Area San Zenone", km:320, kw:150, prezzo:0.69},
+];
+const NODI = [{nome:"Cattolica", km:0, kw:0, prezzo:0}, ...COLONNINE, {nome:"Milano", km:KM_TOT, kw:0, prezzo:0}];
+const R = 2, S = 100*R, SOSTA_MIN = 5, EURO_ORA = 15;
+
+// ---- Modello fisico ----
+function servizi(t){ let p=0.35; if(t<18)p+=0.11*(18-t); if(t>24)p+=0.09*(t-24); return p; }
+function energiaTratto(km, dh, v, t, pax){
+  const g=9.81, ms=v/3.6, rho=101325/(287.05*(273.15+t)), m=AUTO.massa+75*pax+20;
+  const f=0.5*rho*AUTO.cx*AUTO.area*ms*ms + AUTO.crr*m*g;
+  let j=f*km*1000/AUTO.effT; const jp=m*g*dh;
+  j += jp>0 ? jp/AUTO.effT : jp*AUTO.effR;
+  let kwh = j/3.6e6 + servizi(t)*km/v;
+  if(t<10) kwh *= 1+0.004*(10-t);
+  return kwh;
+}
+function kwCurva(soc, kwCol){
+  const c=AUTO.curva; let kw=c[c.length-1][1];
+  for(let i=1;i<c.length;i++) if(soc<=c[i][0]){ const f=(soc-c[i-1][0])/(c[i][0]-c[i-1][0]); kw=c[i-1][1]+f*(c[i][1]-c[i-1][1]); break; }
+  return Math.min(kw, kwCol);
+}
+const cacheCurve = {};
+function minutiCum(kw){ // minuti da 0 a k/R %
+  if(cacheCurve[kw]) return cacheCurve[kw];
+  const a=new Float64Array(S+1);
+  for(let k=1;k<=S;k++){ const soc=(k-0.5)/R; a[k]=a[k-1]+AUTO.batt/S/kwCurva(soc,kw)*60; }
+  return cacheCurve[kw]=a;
+}
+
+// Energia e tempo cumulati lungo il profilo reale
+function cumulati(p){
+  const E=[0], T=[0];
+  for(let i=1;i<PROFILO.length;i++){
+    const [k1,q1,vo]=PROFILO[i], [k0,q0]=PROFILO[i-1];
+    const v = vo>=75 ? p.vel : vo;        // tratti urbani: velocità reale della strada
+    E.push(E[i-1]+energiaTratto(k1-k0, q1-q0, v, p.temp, p.pax));
+    T.push(T[i-1]+(k1-k0)/v);
+  }
+  return {E,T};
+}
+function aKm(arr, km){
+  for(let i=1;i<PROFILO.length;i++) if(km<=PROFILO[i][0]){
+    const f=(km-PROFILO[i-1][0])/(PROFILO[i][0]-PROFILO[i-1][0]); return arr[i-1]+f*(arr[i]-arr[i-1]); }
+  return arr[arr.length-1];
+}
+
+// ---- Ottimizzazione: programmazione dinamica su (tappa, % batteria) ----
+function pianifica(p){
+  const {E,T}=cumulati(p), N=NODI.length;
+  const e=NODI.map(n=>aKm(E,n.km)), h=NODI.map(n=>aKm(T,n.km));
+  const score=(ore,euro)=>p.ob==="tempo"?ore:euro+ore*EURO_ORA;
+  const best=Array.from({length:N},()=>new Float64Array(S+1).fill(Infinity));
+  const da=Array.from({length:N},()=>new Int32Array((S+1)*3).fill(-1));
+  const s0=Math.round(p.soc0*R), minT=10*R, minF=Math.max(10,p.socF)*R;
+  best[0][s0]=0;
+  for(let i=0;i<N-1;i++){
+    const cum = NODI[i].kw>0 ? minutiCum(NODI[i].kw) : null;
+    for(let s=0;s<=S;s++){
+      const b=best[i][s]; if(b===Infinity) continue;
+      const tMax = cum ? S : s;
+      for(let t=s;t<=tMax;t++){
+        const min = cum ? cum[t]-cum[s]+(t>s?SOSTA_MIN:0) : 0;
+        const euro = AUTO.batt*(t-s)/S/AUTO.effDC*NODI[i].prezzo;
+        const cr = score(min/60, euro);
+        for(let j=i+1;j<N;j++){
+          const arr = t - Math.ceil((e[j]-e[i])/AUTO.batt*S - 1e-9);
+          if(arr<minT) break;
+          if(j===N-1 && arr<minF) continue;
+          const val=b+cr+score(h[j]-h[i],0);
+          if(val<best[j][arr]-1e-12){ best[j][arr]=val; da[j].set([i,s,t],arr*3); }
+        }
+      }
+    }
+  }
+  let fine=-1;
+  for(let s=0;s<=S;s++) if(best[N-1][s]<Infinity && (fine<0||best[N-1][s]<best[N-1][fine])) fine=s;
+  if(fine<0) return {ok:false};
+  const soste=[]; let j=N-1, s=fine;
+  while(j>0){
+    const [i,sa,sp]=da[j].slice(s*3,s*3+3);
+    if(sp>sa){ const n=NODI[i], a=sa/R, b=sp/R, cum=minutiCum(n.kw);
+      const min=cum[sp]-cum[sa]+SOSTA_MIN, kwh=AUTO.batt*(b-a)/100/AUTO.effDC;
+      soste.unshift({n, a, b, min, kwh, costo:kwh*n.prezzo}); }
+    j=i; s=sa;
+  }
+  const guida=h[N-1], ric=soste.reduce((x,y)=>x+y.min,0)/60;
+  return {ok:true, soste, guida, ric, tot:guida+ric, costo:soste.reduce((x,y)=>x+y.costo,0),
+          arrivo:fine/R, kwh:e[N-1], E, T};
+}
+
+// ---- Interfaccia ----
+const $=id=>document.getElementById(id);
+const st={ob:"tempo"};
+const dur=o=>{const m=Math.round(o*60);return Math.floor(m/60)+"h"+String(m%60).padStart(2,"0");};
+const clk=m=>{m=Math.round(m)%1440;return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");};
+const fmt=(x,d=1)=>x.toLocaleString("it-IT",{minimumFractionDigits:d,maximumFractionDigits:d});
+function leggi(){
+  return {vel:+$("vel").value, temp:+$("temp").value, soc0:+$("soc0").value, socF:+$("socF").value,
+          pax:+$("pax").value, ob:st.ob};
+}
+function etichette(p){
+  $("velO").textContent=p.vel+" km/h"; $("tempO").textContent=p.temp+" °C";
+  $("soc0O").textContent=p.soc0+"%"; $("socFO").textContent=p.socF+"%";
+  $("paxO").textContent=p.pax;
+}
+function disegna(p,r){
+  const W=640,H=230,L=34,Rr=10,T=12,B=26, x=k=>L+k/KM_TOT*(W-L-Rr), y=v=>T+(100-v)/100*(H-T-B);
+  let g="";
+  for(const v of [0,25,50,75,100]) g+=`<line x1="${L}" x2="${W-Rr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-6}" y="${y(v)+3}" text-anchor="end">${v}%</text>`;
+  for(let k=0;k<=KM_TOT;k+=50) g+=`<text x="${x(k)}" y="${H-8}" text-anchor="middle">${k} km</text>`;
+  // altitudine (0-200 m sulla fascia bassa)
+  let ter=`M${x(0)},${y(0)} `+PROFILO.map(q=>`L${x(q[0]).toFixed(1)},${(y(0)-q[1]/200*40).toFixed(1)}`).join(" ")+` L${x(KM_TOT)},${y(0)} Z`;
+  g+=`<path d="${ter}" fill="var(--terrain)" stroke="none"/>`;
+  if(!r.ok){ $("chart").innerHTML=g; return; }
+  // curva batteria
+  let soc=p.soc0, pts=[[0,soc]], prevE=0; let prevK=0;
+  for(let i=1;i<PROFILO.length;i++){
+    const k=PROFILO[i][0];
+    for(const s of r.soste) if(s.n.km>prevK && s.n.km<=k){
+      const eS=aKm(r.E,s.n.km); soc-=(eS-prevE)/AUTO.batt*100; prevE=eS;
+      pts.push([s.n.km,soc]); soc=s.b; pts.push([s.n.km,soc]); }
+    soc-=(r.E[i]-prevE)/AUTO.batt*100; prevE=r.E[i]; prevK=k; pts.push([k,soc]);
+  }
+  g+=`<polyline points="${pts.map(q=>x(q[0]).toFixed(1)+","+y(q[1]).toFixed(1)).join(" ")}" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linejoin="round"/>`;
+  g+=`<line x1="${L}" x2="${W-Rr}" y1="${y(10)}" y2="${y(10)}" stroke="var(--warn)" stroke-dasharray="4 4"/><text x="${W-Rr}" y="${y(10)-4}" text-anchor="end">riserva 10%</text>`;
+  for(const s of r.soste){
+    g+=`<line x1="${x(s.n.km)}" x2="${x(s.n.km)}" y1="${y(s.a)}" y2="${y(s.b)}" stroke="var(--charge)" stroke-width="3"/>`;
+    g+=`<circle cx="${x(s.n.km)}" cy="${y(s.b)}" r="3.5" fill="var(--charge)"/>`;
+    g+=`<text x="${x(s.n.km)}" y="${y(s.b)-8}" text-anchor="middle" style="fill:var(--fg)">${Math.round(s.min)} min</text>`;
+  }
+  g+=`<circle cx="${x(KM_TOT)}" cy="${y(r.arrivo)}" r="3.5" fill="var(--accent)"/>`;
+  $("chart").innerHTML=g;
+}
+function mostra(){
+  const p=leggi(); etichette(p);
+  const r=pianifica(p);
+  if(!r.ok){
+    $("kpis").innerHTML=`<div class="kpi" style="grid-column:1/-1"><span>Risultato</span><b class="err">Viaggio impossibile</b></div>`;
+    $("tl").innerHTML="<li><span></span><span>Con queste impostazioni non si arriva: alza la batteria di partenza o abbassa quella richiesta all'arrivo.</span></li>";
+    disegna(p,r); return;
+  }
+  $("kpis").innerHTML=`
+    <div class="kpi main"><span>Tempo totale</span><b>${dur(r.tot)}</b></div>
+    <div class="kpi"><span>Soste</span><b>${r.soste.length}</b></div>
+    <div class="kpi"><span>Spesa ricarica</span><b>${fmt(r.costo,2)} €</b></div>
+    <div class="kpi"><span>Consumo</span><b>${fmt(r.kwh/KM_TOT*100)}</b><span>kWh/100 km</span></div>`;
+  const [hh,mm]=($("ora").value||"08:30").split(":").map(Number); let t=hh*60+mm;
+  let html=`<li><span class="t">${clk(t)}</span><span>Partenza da Cattolica<span class="pill">${p.soc0}%</span></span></li>`;
+  const t0=t; let soste=0;
+  for(const s of r.soste){
+    t = t0 + aKm(r.T,s.n.km)*60 + soste;
+    html+=`<li class="stop"><span class="t">${clk(t)}</span><span>${s.n.nome}<span class="pill">${fmt(s.a,0)}% → ${fmt(s.b,0)}%</span>
+      <small>km ${s.n.km} · colonnina ${s.n.kw} kW · ${Math.round(s.min)} min · ${fmt(s.kwh)} kWh · ${fmt(s.costo,2)} €</small></span></li>`;
+    soste+=s.min;
+    t+=s.min;
+    html+=`<li><span class="t">${clk(t)}</span><span>Ripartenza</span></li>`;
+  }
+  // l'orario di arrivo = partenza + guida + soste
+  const arrivo=hh*60+mm+r.tot*60;
+  html+=`<li><span class="t">${clk(arrivo)}</span><span>Arrivo a Milano<span class="pill">${fmt(r.arrivo,0)}%</span>
+    <small>guida ${dur(r.guida)} + soste ${dur(r.ric)}</small></span></li>`;
+  $("tl").innerHTML=html;
+  disegna(p,r);
+  clearTimeout(mostra.tm); mostra.tm=setTimeout(()=>tabella(p),200);
+}
+function tabella(p){
+  const vels=[100,110,120,130], temps=[-5,5,15,25,35];
+  let h="<thead><tr><th>temp \\ km/h</th>"+vels.map(v=>`<th>${v}</th>`).join("")+"</tr></thead><tbody>";
+  for(const t of temps){
+    const rs=vels.map(v=>pianifica({...p,vel:v,temp:t}));
+    const m=Math.min(...rs.map(r=>r.ok?r.tot:Infinity));
+    h+=`<tr><th>${t} °C</th>`+rs.map((r,i)=>{
+      const cls=[r.ok&&r.tot===m?"best":"", vels[i]===p.vel&&t===p.temp?"now":""].join(" ");
+      return `<td class="${cls}">${r.ok?dur(r.tot)+" ("+r.soste.length+")":"–"}</td>`;}).join("")+"</tr>";
+  }
+  $("tab").innerHTML=h+"</tbody>";
+}
+for(const id of ["vel","temp","soc0","socF","pax","ora"]) $(id).addEventListener("input",mostra);
+for(const [id,v] of [["obT","tempo"],["obC","costo"]]) $(id).addEventListener("click",()=>{
+  st.ob=v; $("obT").setAttribute("aria-pressed",v==="tempo"); $("obC").setAttribute("aria-pressed",v==="costo"); mostra(); });
+mostra();
+</script>
