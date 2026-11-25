@@ -32,6 +32,25 @@ struct Parametri {
 };
 
 class Pianificatore {
+public:
+    struct CostoSosta { double minuti, kwh_rete, euro; };
+
+    // Sosta alla tappa i caricando da a% a b%. Se la colonnina e' fuori
+    // dall'autostrada si aggiungono andata e ritorno (percorso stradale stimato
+    // 1,3 volte la linea d'aria, a 50 km/h) e l'energia per farli, che va
+    // ricaricata in piu'.
+    CostoSosta costo_sosta(int i, double a, double b) const {
+        const Tappa& t = t_[i];
+        double km_dev = t.deviazione_m > RAGGIO_AUTOSTRADA_M ? 2 * 1.3 * t.deviazione_m / 1000 : 0;
+        Condizioni urbano = p_.cond; urbano.velocita_kmh = 50;
+        double kwh_dev = km_dev > 0 ? v_.energia_tratto(km_dev, 0, urbano) : 0;
+        double min = v_.minuti_ricarica(a, b, t.kw) + p_.minuti_sosta + km_dev / 50 * 60
+                   + kwh_dev / v_.potenza_ricarica(b, t.kw) * 60;
+        double rete = (v_.batteria() * (b - a) / 100 + kwh_dev) / v_.scheda().eff_ricarica_dc;
+        return {min, rete, rete * t.prezzo_kwh};
+    }
+private:
+    static constexpr double RAGGIO_AUTOSTRADA_M = 400;
     static constexpr int R = 2;            // passi per punto percentuale
     static constexpr int S = 100 * R;      // numero stati batteria
 public:
@@ -67,9 +86,13 @@ public:
             for (int s = 0; s <= S; ++s) {
                 if (best[i][s] == INF) continue;
                 for (int t = s; t <= (t_[i].kw > 0 ? S : s); ++t) {
-                    double min = cum[t] - cum[s] + (t > s ? p_.minuti_sosta : 0);
-                    double euro = v_.batteria() * (t - s) / S / v_.scheda().eff_ricarica_dc
-                                  * t_[i].prezzo_kwh;
+                    double min = 0, euro = 0;
+                    if (t > s) {
+                        CostoSosta extra = costo_sosta(i, (double)t / R, (double)t / R);
+                        min = cum[t] - cum[s] + extra.minuti;
+                        euro = (v_.batteria() * (t - s) / S / v_.scheda().eff_ricarica_dc
+                                + extra.kwh_rete) * t_[i].prezzo_kwh;
+                    }
                     double c_ric = punteggio(min / 60, euro);
                     for (int j = i + 1; j < N; ++j) {
                         int usati = (int)std::ceil(kwh[i][j] / v_.batteria() * S - 1e-9);
@@ -103,11 +126,10 @@ public:
             p.ore_guida += (t_[j].km - t_[d.i].km) / p_.cond.velocita_kmh;
             if (d.t > d.s) {
                 double a = (double)d.s / R, b = (double)d.t / R;
-                double min = v_.minuti_ricarica(a, b, t_[d.i].kw) + p_.minuti_sosta;
-                double rete = v_.batteria() * (b - a) / 100 / v_.scheda().eff_ricarica_dc;
-                p.soste.insert(p.soste.begin(), {d.i, a, b, min, rete, rete * t_[d.i].prezzo_kwh});
-                p.ore_ricarica += min / 60;
-                p.costo += rete * t_[d.i].prezzo_kwh;
+                CostoSosta c = costo_sosta(d.i, a, b);
+                p.soste.insert(p.soste.begin(), {d.i, a, b, c.minuti, c.kwh_rete, c.euro});
+                p.ore_ricarica += c.minuti / 60;
+                p.costo += c.euro;
             }
             j = d.i; s = d.s;
         }

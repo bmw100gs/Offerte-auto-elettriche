@@ -1,4 +1,4 @@
-<title>Viaggio Elroq</title>
+<title>Electric Nav</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -36,6 +36,9 @@ input[type=time]{font:inherit;padding:6px 8px;border:1px solid var(--line);borde
 .seg button{font:inherit;font-size:.9rem;padding:8px;border:0;background:transparent;color:var(--fg);cursor:pointer}
 .seg button[aria-pressed=true]{background:var(--accent);color:var(--panel);font-weight:600}
 button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:.88rem;padding:6px 10px;border:1px solid var(--line);border-radius:99px;cursor:pointer;color:var(--fg)}
+.chip input{accent-color:var(--accent);margin:0}
 .car{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;line-height:1.6}
 .car b{color:var(--fg)}
 .res{display:grid;gap:16px;min-width:0}
@@ -69,7 +72,7 @@ td.now{outline:2px solid var(--accent);outline-offset:-2px}
 
 <div class="wrap">
 <header>
-  <h1>Viaggio Elroq</h1>
+  <h1>Electric Nav</h1>
   <div class="route">Cattolica → Milano · 343,6 km · A14 + A1</div>
 </header>
 
@@ -82,6 +85,11 @@ td.now{outline:2px solid var(--accent);outline-offset:-2px}
     <div class="field"><label for="socF">Batteria minima all'arrivo <b id="socFO"></b></label><input id="socF" type="range" min="10" max="50" step="5" value="10"></div>
     <div class="field"><label for="pax">Persone a bordo <b id="paxO"></b></label><input id="pax" type="range" min="1" max="5" step="1" value="1"></div>
     <div class="field"><label for="ora">Ora di partenza</label><input id="ora" type="time" value="08:30"></div>
+    <div class="field"><label>Reti di ricarica</label>
+      <div class="chips" role="group" aria-label="Reti di ricarica">
+        <label class="chip"><input id="rF2x" type="checkbox" checked> Free To X</label>
+        <label class="chip"><input id="rTesla" type="checkbox" checked> Tesla Supercharger</label>
+      </div></div>
     <div class="field"><label>Obiettivo</label>
       <div class="seg" role="group" aria-label="Obiettivo">
         <button id="obT" type="button" aria-pressed="true">Arrivare prima</button>
@@ -95,7 +103,7 @@ td.now{outline:2px solid var(--accent);outline-offset:-2px}
     <section class="panel">
       <h2>Batteria lungo il percorso</h2>
       <svg class="chart" id="chart" viewBox="0 0 640 230" role="img" aria-label="Percentuale di batteria lungo il percorso"></svg>
-      <div class="legend"><span><i style="background:var(--accent)"></i>batteria %</span><span><i style="background:var(--charge)"></i>ricarica</span><span><i style="background:var(--terrain);height:8px"></i>altitudine (reale)</span></div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>batteria %</span><span><i style="background:var(--charge)"></i>ricarica</span><span><i style="background:var(--terrain);height:8px"></i>altitudine (reale)</span><span><i style="background:var(--muted);height:6px;width:8px"></i>Free To X</span><span><i style="background:var(--warn);height:6px;width:8px"></i>Tesla</span></div>
     </section>
     <section class="panel">
       <h2>Diario di viaggio</h2>
@@ -106,7 +114,7 @@ td.now{outline:2px solid var(--accent);outline-offset:-2px}
       <div class="scroll"><table id="tab"></table></div>
       <p class="note">Tra parentesi il numero di soste. In verde la velocità più rapida per ogni temperatura; il riquadro indica le impostazioni attuali.</p>
     </section>
-    <p class="note">Percorso e altitudini reali da OpenStreetMap (OSRM) e EU-DEM (OpenTopoData). Batteria, potenza DC e tempi di ricarica da schede Skoda, ev-database ed evkx. Massa, Cx e rendimenti sono stime. Colonnine Free To X, potenze e carreggiata dai dati ufficiali di Autostrade per l'Italia (viabilita.autostrade.it), posizionate sul percorso reale. I prezzi al kWh sono stimati: non sono pubblicati nei dati.</p>
+    <p class="note">Percorso e altitudini reali da OpenStreetMap (OSRM) e EU-DEM (OpenTopoData). Batteria, potenza DC e tempi di ricarica da schede Skoda, ev-database ed evkx. Massa, Cx e rendimenti sono stime. Colonnine Free To X, potenze e carreggiata dai dati ufficiali di Autostrade per l'Italia (viabilita.autostrade.it). Supercharger Tesla aperti a tutte le auto da supercharge.info; per quelli fuori dall'autostrada si conta l'uscita (andata e ritorno). I prezzi al kWh sono stimati: non sono pubblicati nei dati.</p>
   </div>
 </div>
 </div>
@@ -117,17 +125,34 @@ const AUTO = {batt:77, massa:2100, cx:0.26, area:2.55, crr:0.0085, effT:0.88, ef
   curva:[[0,100],[10,135],[20,150],[30,140],[40,120],[50,100],[60,85],[70,72],[80,55],[90,32],[100,10]]};
 const KM_TOT = PROFILO[PROFILO.length-1][0];
 const COLONNINE = [
-  {nome:"A14 Rubicone Est", km:36, kw:300, prezzo:0.79},
-  {nome:"A14 Bevano Est", km:58, kw:200, prezzo:0.79},
-  {nome:"A14 Sillaro Est", km:110, kw:300, prezzo:0.79},
-  {nome:"A14 La Pioppa Est", km:145, kw:300, prezzo:0.79},
-  {nome:"A1 Secchia Est", km:179, kw:300, prezzo:0.79},
-  {nome:"A1 San Martino Est", km:222, kw:300, prezzo:0.79},
-  {nome:"A1 Arda Est", km:262, kw:300, prezzo:0.79},
-  {nome:"A1 Somaglia Est", km:292, kw:300, prezzo:0.79},
-  {nome:"A1 San Zenone Est", km:321, kw:300, prezzo:0.79},
+  {nome:"Tesla Rimini", rete:"tesla", km:18.9, kw:250, prezzo:0.69, dev:1561},
+  {nome:"A14 Rubicone Est", rete:"f2x", km:35.7, kw:300, prezzo:0.79, dev:29},
+  {nome:"A14 Bevano Est", rete:"f2x", km:57.5, kw:200, prezzo:0.79, dev:22},
+  {nome:"Tesla Forli", rete:"tesla", km:65.7, kw:250, prezzo:0.69, dev:1253},
+  {nome:"A14 Sillaro Est", rete:"f2x", km:109.6, kw:300, prezzo:0.79, dev:27},
+  {nome:"A14 La Pioppa Est", rete:"f2x", km:144.7, kw:300, prezzo:0.79, dev:63},
+  {nome:"Tesla Modena", rete:"tesla", km:164.8, kw:150, prezzo:0.69, dev:483},
+  {nome:"A1 Secchia Est", rete:"f2x", km:179.2, kw:300, prezzo:0.79, dev:64},
+  {nome:"Tesla Reggio Emilia", rete:"tesla", km:197.9, kw:250, prezzo:0.69, dev:1167},
+  {nome:"A1 San Martino Est", rete:"f2x", km:221.5, kw:300, prezzo:0.79, dev:65},
+  {nome:"Tesla Parma", rete:"tesla", km:224.5, kw:250, prezzo:0.69, dev:2033},
+  {nome:"Tesla Fidenza", rete:"tesla", km:244.9, kw:250, prezzo:0.69, dev:729},
+  {nome:"A1 Arda Est", rete:"f2x", km:262.4, kw:300, prezzo:0.79, dev:44},
+  {nome:"Tesla Piacenza", rete:"tesla", km:277.3, kw:250, prezzo:0.69, dev:484},
+  {nome:"A1 Somaglia Est", rete:"f2x", km:292.1, kw:300, prezzo:0.79, dev:23},
+  {nome:"Tesla Lodi", rete:"tesla", km:312.4, kw:250, prezzo:0.69, dev:581},
+  {nome:"A1 San Zenone Est", rete:"f2x", km:320.5, kw:300, prezzo:0.79, dev:21},
 ];
-const NODI = [{nome:"Cattolica", km:0, kw:0, prezzo:0}, ...COLONNINE, {nome:"Milano", km:KM_TOT, kw:0, prezzo:0}];
+const RETI = {f2x:"Free To X", tesla:"Tesla Supercharger"};
+const nodi = p => [{nome:"Cattolica", km:0, kw:0, prezzo:0, dev:0},
+  ...COLONNINE.filter(c=>p.reti.includes(c.rete)), {nome:"Milano", km:KM_TOT, kw:0, prezzo:0, dev:0}];
+// Colonnina fuori dall'autostrada: andata e ritorno (1,3 x linea d'aria, a 50 km/h)
+// e l'energia per farli, che va ricaricata in più.
+function extraSosta(n, b, p){
+  const km = n.dev>400 ? 2*1.3*n.dev/1000 : 0;
+  const kwh = km ? energiaTratto(km, 0, 50, p.temp, p.pax) : 0;
+  return {km, kwh, min: SOSTA_MIN + km/50*60 + (kwh ? kwh/kwCurva(b, n.kw)*60 : 0)};
+}
 const R = 2, S = 100*R, SOSTA_MIN = 5, EURO_ORA = 15;
 
 // ---- Modello fisico ----
@@ -173,7 +198,7 @@ function aKm(arr, km){
 
 // ---- Ottimizzazione: programmazione dinamica su (tappa, % batteria) ----
 function pianifica(p){
-  const {E,T}=cumulati(p), N=NODI.length;
+  const NODI=nodi(p), {E,T}=cumulati(p), N=NODI.length;
   const e=NODI.map(n=>aKm(E,n.km)), h=NODI.map(n=>aKm(T,n.km));
   const score=(ore,euro)=>p.ob==="tempo"?ore:euro+ore*EURO_ORA;
   const best=Array.from({length:N},()=>new Float64Array(S+1).fill(Infinity));
@@ -186,8 +211,10 @@ function pianifica(p){
       const b=best[i][s]; if(b===Infinity) continue;
       const tMax = cum ? S : s;
       for(let t=s;t<=tMax;t++){
-        const min = cum ? cum[t]-cum[s]+(t>s?SOSTA_MIN:0) : 0;
-        const euro = AUTO.batt*(t-s)/S/AUTO.effDC*NODI[i].prezzo;
+        let min=0, euro=0;
+        if(cum && t>s){ const x=extraSosta(NODI[i], t/R, p);
+          min = cum[t]-cum[s]+x.min;
+          euro = (AUTO.batt*(t-s)/S + x.kwh)/AUTO.effDC*NODI[i].prezzo; }
         const cr = score(min/60, euro);
         for(let j=i+1;j<N;j++){
           const arr = t - Math.ceil((e[j]-e[i])/AUTO.batt*S - 1e-9);
@@ -206,8 +233,9 @@ function pianifica(p){
   while(j>0){
     const [i,sa,sp]=da[j].slice(s*3,s*3+3);
     if(sp>sa){ const n=NODI[i], a=sa/R, b=sp/R, cum=minutiCum(n.kw);
-      const min=cum[sp]-cum[sa]+SOSTA_MIN, kwh=AUTO.batt*(b-a)/100/AUTO.effDC;
-      soste.unshift({n, a, b, min, kwh, costo:kwh*n.prezzo}); }
+      const x=extraSosta(n, b, p);
+      const min=cum[sp]-cum[sa]+x.min, kwh=(AUTO.batt*(b-a)/100+x.kwh)/AUTO.effDC;
+      soste.unshift({n, a, b, min, kwh, costo:kwh*n.prezzo, devKm:x.km}); }
     j=i; s=sa;
   }
   const guida=h[N-1], ric=soste.reduce((x,y)=>x+y.min,0)/60;
@@ -223,7 +251,8 @@ const clk=m=>{m=Math.round(m)%1440;return String(Math.floor(m/60)).padStart(2,"0
 const fmt=(x,d=1)=>x.toLocaleString("it-IT",{minimumFractionDigits:d,maximumFractionDigits:d});
 function leggi(){
   return {vel:+$("vel").value, temp:+$("temp").value, soc0:+$("soc0").value, socF:+$("socF").value,
-          pax:+$("pax").value, ob:st.ob};
+          pax:+$("pax").value, ob:st.ob,
+          reti:[$("rF2x").checked&&"f2x", $("rTesla").checked&&"tesla"].filter(Boolean)};
 }
 function etichette(p){
   $("velO").textContent=p.vel+" km/h"; $("tempO").textContent=p.temp+" °C";
@@ -238,6 +267,8 @@ function disegna(p,r){
   // altitudine (0-200 m sulla fascia bassa)
   let ter=`M${x(0)},${y(0)} `+PROFILO.map(q=>`L${x(q[0]).toFixed(1)},${(y(0)-q[1]/200*40).toFixed(1)}`).join(" ")+` L${x(KM_TOT)},${y(0)} Z`;
   g+=`<path d="${ter}" fill="var(--terrain)" stroke="none"/>`;
+  for(const c of COLONNINE.filter(c=>p.reti.includes(c.rete)))
+    g+=`<path d="M${x(c.km)-4},${y(0)+9} l4,-6 l4,6 z" fill="${c.rete==="tesla"?"var(--warn)":"var(--muted)"}"><title>${c.nome} · ${c.kw} kW</title></path>`;
   if(!r.ok){ $("chart").innerHTML=g; return; }
   // curva batteria
   let soc=p.soc0, pts=[[0,soc]], prevE=0; let prevK=0;
@@ -277,7 +308,7 @@ function mostra(){
   for(const s of r.soste){
     t = t0 + aKm(r.T,s.n.km)*60 + soste;
     html+=`<li class="stop"><span class="t">${clk(t)}</span><span>${s.n.nome}<span class="pill">${fmt(s.a,0)}% → ${fmt(s.b,0)}%</span>
-      <small>km ${s.n.km} · Free To X fino a ${s.n.kw} kW · ${Math.round(s.min)} min · ${fmt(s.kwh)} kWh · ${fmt(s.costo,2)} €</small></span></li>`;
+      <small>km ${Math.round(s.n.km)} · ${RETI[s.n.rete]} fino a ${s.n.kw} kW${s.devKm?` · uscita ${fmt(s.devKm)} km a/r`:" · in autostrada"} · ${Math.round(s.min)} min · ${fmt(s.kwh)} kWh · ${fmt(s.costo,2)} €</small></span></li>`;
     soste+=s.min;
     t+=s.min;
     html+=`<li><span class="t">${clk(t)}</span><span>Ripartenza</span></li>`;
@@ -302,7 +333,7 @@ function tabella(p){
   }
   $("tab").innerHTML=h+"</tbody>";
 }
-for(const id of ["vel","temp","soc0","socF","pax","ora"]) $(id).addEventListener("input",mostra);
+for(const id of ["vel","temp","soc0","socF","pax","ora","rF2x","rTesla"]) $(id).addEventListener("input",mostra);
 for(const [id,v] of [["obT","tempo"],["obC","costo"]]) $(id).addEventListener("click",()=>{
   st.ob=v; $("obT").setAttribute("aria-pressed",v==="tempo"); $("obC").setAttribute("aria-pressed",v==="costo"); mostra(); });
 mostra();

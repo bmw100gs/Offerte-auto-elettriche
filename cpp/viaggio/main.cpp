@@ -1,4 +1,4 @@
-// main.cpp - Pianificatore di viaggio per auto elettrica
+// main.cpp - Electric Nav: pianificatore di viaggio per auto elettrica
 // Uso: ./viaggio [velocita=120] [temp=15] [partenza=90] [arrivo=10]
 //                [riserva=10] [passeggeri=1] [ora=08:30] [obiettivo=tempo|costo]
 #include "pianificatore.h"
@@ -50,6 +50,8 @@ int main(int argc, char* argv[]) {
     auto percorso = cattolica_milano();
     const auto& sc = elroq.scheda();
     std::cout << std::fixed;
+
+    std::cout << "ELECTRIC NAV - pianificatore di viaggio per auto elettriche\n\n";
 
     // --- Scheda auto ---------------------------------------------------
     std::cout << "=== " << sc.nome << " | motore " << sc.motore << " "

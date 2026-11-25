@@ -6,6 +6,8 @@ Fonti (gratuite, senza chiave):
   - OpenTopoData altitudine (modello EU-DEM 25 m)
   - Autostrade per l'Italia (viabilita.autostrade.it) colonnine Free To X
                  ufficiali nelle aree di servizio, con direzione e potenza
+  - supercharge.info  Supercharger Tesla (solo quelli aperti a tutte le auto)
+  - Open Charge Map  colonnine IONITY (serve una chiave API, iniettata dal proxy)
   - Overpass    colonnine mappate su OpenStreetMap (riserva)
 
 Uso:  python3 scarica_percorso.py Cattolica Milano percorsi/cattolica_milano.csv
@@ -28,6 +30,7 @@ CITTA = {
 }
 PASSO_KM = 2.0          # risoluzione del profilo altimetrico
 RAGGIO_COLONNINE_M = 400
+MAX_DEVIAZIONE_M = 6000   # stazioni fuori percorso: distanza massima in linea d'aria
 
 
 def coord(nome):
@@ -155,6 +158,82 @@ def colonnine_autostrade(punti, dist):
     return sorted(trovate)
 
 
+def km_cumulati(dist):
+    km = [0.0]
+    for d in dist:
+        km.append(km[-1] + d / 1000)
+    return km
+
+
+def vicino_al_percorso(punti, km_cum, lat, lon):
+    """(distanza m, km sul percorso) se la stazione e' raggiungibile, altrimenti None.
+    Vicino all'autostrada (< 400 m) conta la carreggiata; piu' lontano si esce
+    dall'autostrada e la carreggiata non conta."""
+    d, km, destra = proietta(punti, km_cum, lat, lon)
+    if d > MAX_DEVIAZIONE_M or (d <= RAGGIO_COLONNINE_M and not destra):
+        return None
+    return d, km
+
+
+def colonnine_tesla(punti, dist):
+    """Supercharger Tesla aperti anche alle altre marche (supercharge.info)."""
+    siti = scarica("https://supercharge.info/service/supercharge/allSites")
+    km_cum = km_cumulati(dist)
+    lat_min = min(p[0] for p in punti) - 0.1
+    lat_max = max(p[0] for p in punti) + 0.1
+    lon_min = min(p[1] for p in punti) - 0.1
+    lon_max = max(p[1] for p in punti) + 0.1
+    trovate = []
+    for x in siti:
+        lat, lon = x["gps"]["latitude"], x["gps"]["longitude"]
+        if not (lat_min < lat < lat_max and lon_min < lon < lon_max):
+            continue
+        if x.get("status") != "OPEN" or not x.get("otherEVs"):
+            continue
+        v = vicino_al_percorso(punti, km_cum, lat, lon)
+        if v is None:
+            continue
+        kw = x.get("powerKilowatt") or 150
+        nome = "Tesla " + x["name"].replace(", Italy", "").replace(",", " ")[:30]
+        trovate.append((v[1], nome, kw, 0.69, v[0]))   # prezzo non-Tesla stimato
+    return trovate
+
+
+def colonnine_ionity(punti, dist, profilo):
+    """Colonnine IONITY da Open Charge Map (operatore 3299)."""
+    km_cum = km_cumulati(dist)
+    # Open Charge Map accetta una polilinea codificata: usiamo il profilo ridotto
+    def codifica(coords):
+        out, plat, plon = [], 0, 0
+        for lat, lon in coords:
+            for v, prev in ((round(lat * 1e5), plat), (round(lon * 1e5), plon)):
+                d = v - prev
+                d = ~(d << 1) if d < 0 else d << 1
+                while d >= 0x20:
+                    out.append(chr((0x20 | (d & 0x1f)) + 63))
+                    d >>= 5
+                out.append(chr(d + 63))
+            plat, plon = round(lat * 1e5), round(lon * 1e5)
+        return "".join(out)
+    linea = codifica([(p[1], p[2]) for p in profilo])
+    url = ("https://api.openchargemap.io/v3/poi?operatorid=3299&maxresults=200&compact=true"
+           f"&verbose=false&distanceunit=km&distance={MAX_DEVIAZIONE_M / 1000}"
+           f"&polyline={urllib.parse.quote(linea)}")
+    trovate = []
+    for x in scarica(url):
+        a = x.get("AddressInfo", {})
+        lat, lon = a.get("Latitude"), a.get("Longitude")
+        if lat is None or x.get("StatusTypeID") in (100, 150, 200):   # non operative
+            continue
+        v = vicino_al_percorso(punti, km_cum, lat, lon)
+        if v is None:
+            continue
+        kw = max([c.get("PowerKW") or 0 for c in x.get("Connections") or []] + [0]) or 350
+        nome = "IONITY " + (a.get("Town") or a.get("Title") or "").replace(",", " ")[:30]
+        trovate.append((v[1], nome, kw, 0.69, v[0]))   # prezzo IONITY Direct stimato
+    return trovate
+
+
 def colonnine(profilo):
     linea = ",".join(f"{p[1]:.5f},{p[2]:.5f}" for p in profilo[::2])
     query = (f"[out:json][timeout:180];"
@@ -206,6 +285,17 @@ def main():
     except Exception as e:
         print(f"  non disponibili ({e}), provo Overpass", file=sys.stderr)
         cols = colonnine(profilo)
+    for nome, funz in (("Tesla Supercharger", lambda: colonnine_tesla(punti, dist)),
+                       ("IONITY", lambda: colonnine_ionity(punti, dist, profilo))):
+        print(f"Colonnine {nome}...", file=sys.stderr)
+        try:
+            extra = funz()
+            print(f"  {len(extra)} trovate", file=sys.stderr)
+            cols += extra
+        except Exception as e:
+            print(f"  non disponibili ({e})", file=sys.stderr)
+    km_fine = profilo[-1][0]
+    cols = sorted(c for c in cols if 1 < c[0] < km_fine - 1)
     print(f"  {len(cols)} colonnine DC >= 50 kW", file=sys.stderr)
 
     with open(uscita, "w") as f:
