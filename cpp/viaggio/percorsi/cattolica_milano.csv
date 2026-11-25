@@ -1,4 +1,4 @@
-# Cattolica -> Milano | dati OpenStreetMap (ODbL)
+# Cattolica -> Milano | percorso OpenStreetMap (ODbL), colonnine Autostrade per l Italia
 # P,km,quota_m,velocita_osrm_kmh
 P,0.00,7,31
 P,2.00,18,31
@@ -148,4 +148,13 @@ P,340.62,117,40
 P,342.69,127,41
 P,343.65,130,21
 # C,km,nome,kw,prezzo_stimato,distanza_dal_percorso_m
+C,35.68,A14 Rubicone Est (Free To X),300,0.79,29
+C,57.51,A14 Bevano Est (Free To X),200,0.79,22
+C,109.62,A14 Sillaro Est (Free To X),300,0.79,27
+C,144.65,A14 La Pioppa Est (Free To X),300,0.79,63
+C,179.18,A1 Secchia Est (Free To X),300,0.79,64
+C,221.52,A1 San Martino Est (Free To X),300,0.79,65
+C,262.37,A1 Arda Est (Free To X),300,0.79,44
+C,292.11,A1 Somaglia Est (Free To X),300,0.79,23
+C,320.52,A1 San Zenone Est (Free To X),300,0.79,21
 N,Cattolica,Milano

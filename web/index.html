@@ -106,7 +106,7 @@ td.now{outline:2px solid var(--accent);outline-offset:-2px}
       <div class="scroll"><table id="tab"></table></div>
       <p class="note">Tra parentesi il numero di soste. In verde la velocità più rapida per ogni temperatura; il riquadro indica le impostazioni attuali.</p>
     </section>
-    <p class="note">Percorso e altitudini reali da OpenStreetMap (OSRM) e EU-DEM (OpenTopoData). Batteria, potenza DC e tempi di ricarica da schede Skoda, ev-database ed evkx. Massa, Cx e rendimenti sono stime. Le aree di servizio sono reali, ma la loro posizione in km, la potenza delle colonnine e i prezzi sono indicativi.</p>
+    <p class="note">Percorso e altitudini reali da OpenStreetMap (OSRM) e EU-DEM (OpenTopoData). Batteria, potenza DC e tempi di ricarica da schede Skoda, ev-database ed evkx. Massa, Cx e rendimenti sono stime. Colonnine Free To X, potenze e carreggiata dai dati ufficiali di Autostrade per l'Italia (viabilita.autostrade.it), posizionate sul percorso reale. I prezzi al kWh sono stimati: non sono pubblicati nei dati.</p>
   </div>
 </div>
 </div>
@@ -117,14 +117,15 @@ const AUTO = {batt:77, massa:2100, cx:0.26, area:2.55, crr:0.0085, effT:0.88, ef
   curva:[[0,100],[10,135],[20,150],[30,140],[40,120],[50,100],[60,85],[70,72],[80,55],[90,32],[100,10]]};
 const KM_TOT = PROFILO[PROFILO.length-1][0];
 const COLONNINE = [
-  {nome:"A14 Area Rubicone", km:39, kw:150, prezzo:0.69},
-  {nome:"A14 Area Santerno (Imola)", km:92, kw:300, prezzo:0.79},
-  {nome:"A14 Area La Pioppa", km:113, kw:150, prezzo:0.69},
-  {nome:"A1 Area Secchia (Modena)", km:167, kw:300, prezzo:0.75},
-  {nome:"A1 Area Taro (Parma)", km:217, kw:150, prezzo:0.69},
-  {nome:"A1 Area Arda (Fiorenzuola)", km:256, kw:50, prezzo:0.59},
-  {nome:"A1 Area Somaglia (Lodi)", km:300, kw:300, prezzo:0.79},
-  {nome:"A1 Area San Zenone", km:320, kw:150, prezzo:0.69},
+  {nome:"A14 Rubicone Est", km:36, kw:300, prezzo:0.79},
+  {nome:"A14 Bevano Est", km:58, kw:200, prezzo:0.79},
+  {nome:"A14 Sillaro Est", km:110, kw:300, prezzo:0.79},
+  {nome:"A14 La Pioppa Est", km:145, kw:300, prezzo:0.79},
+  {nome:"A1 Secchia Est", km:179, kw:300, prezzo:0.79},
+  {nome:"A1 San Martino Est", km:222, kw:300, prezzo:0.79},
+  {nome:"A1 Arda Est", km:262, kw:300, prezzo:0.79},
+  {nome:"A1 Somaglia Est", km:292, kw:300, prezzo:0.79},
+  {nome:"A1 San Zenone Est", km:321, kw:300, prezzo:0.79},
 ];
 const NODI = [{nome:"Cattolica", km:0, kw:0, prezzo:0}, ...COLONNINE, {nome:"Milano", km:KM_TOT, kw:0, prezzo:0}];
 const R = 2, S = 100*R, SOSTA_MIN = 5, EURO_ORA = 15;
@@ -276,7 +277,7 @@ function mostra(){
   for(const s of r.soste){
     t = t0 + aKm(r.T,s.n.km)*60 + soste;
     html+=`<li class="stop"><span class="t">${clk(t)}</span><span>${s.n.nome}<span class="pill">${fmt(s.a,0)}% → ${fmt(s.b,0)}%</span>
-      <small>km ${s.n.km} · colonnina ${s.n.kw} kW · ${Math.round(s.min)} min · ${fmt(s.kwh)} kWh · ${fmt(s.costo,2)} €</small></span></li>`;
+      <small>km ${s.n.km} · Free To X fino a ${s.n.kw} kW · ${Math.round(s.min)} min · ${fmt(s.kwh)} kWh · ${fmt(s.costo,2)} €</small></span></li>`;
     soste+=s.min;
     t+=s.min;
     html+=`<li><span class="t">${clk(t)}</span><span>Ripartenza</span></li>`;

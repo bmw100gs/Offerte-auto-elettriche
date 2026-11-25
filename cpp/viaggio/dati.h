@@ -30,19 +30,21 @@ inline SchedaTecnica skoda_elroq_85() {
     };
 }
 
-// Cattolica -> Milano (A14 + A1), circa 335 km.
-// Aree di servizio reali, ma progressive, potenze e prezzi INDICATIVI.
+// Cattolica -> Milano (A14 + A1), 343.6 km sul percorso reale OSRM.
+// Colonnine Free To X ufficiali (Autostrade per l'Italia), solo carreggiata
+// verso Milano. Quote da EU-DEM. Prezzi STIMATI (non pubblicati).
 inline std::vector<Tappa> cattolica_milano() {
     return {
-        {"Cattolica (partenza)",        0,  10,   0, 0.00},
-        {"A14 Area Rubicone",          38,  30, 150, 0.69},
-        {"A14 Area Santerno (Imola)",  90,  45, 300, 0.79},
-        {"A14 Area La Pioppa",        110,  50, 150, 0.69},
-        {"A1 Area Secchia (Modena)",  163,  35, 300, 0.75},
-        {"A1 Area Taro (Parma)",      212,  60, 150, 0.69},
-        {"A1 Area Arda (Fiorenzuola)",250,  80,  50, 0.59},
-        {"A1 Area Somaglia (Lodi)",   292,  60, 300, 0.79},
-        {"A1 Area San Zenone",        312,  85, 150, 0.69},
-        {"Milano (arrivo)",           335, 120,   0, 0.00},
+        {"Cattolica (partenza)",        0,  7,   0, 0.00},
+        {"A14 Rubicone Est",            35.7,  15, 300, 0.79},
+        {"A14 Bevano Est",              57.5,  16, 200, 0.79},
+        {"A14 Sillaro Est",            109.6,  52, 300, 0.79},
+        {"A14 La Pioppa Est",          144.7,  51, 300, 0.79},
+        {"A1 Secchia Est",             179.2,  42, 300, 0.79},
+        {"A1 San Martino Est",         221.5,  41, 300, 0.79},
+        {"A1 Arda Est",                262.4,  62, 300, 0.79},
+        {"A1 Somaglia Est",            292.1,  51, 300, 0.79},
+        {"A1 San Zenone Est",          320.5,  84, 300, 0.79},
+        {"Milano (arrivo)",            343.6, 130,   0, 0.00},
     };
 }

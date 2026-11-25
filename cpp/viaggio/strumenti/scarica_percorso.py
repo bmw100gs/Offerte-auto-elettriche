@@ -4,7 +4,9 @@
 Fonti (gratuite, senza chiave):
   - OSRM        percorso stradale e velocita tipiche per tratto
   - OpenTopoData altitudine (modello EU-DEM 25 m)
-  - Overpass    colonnine di ricarica mappate su OpenStreetMap
+  - Autostrade per l'Italia (viabilita.autostrade.it) colonnine Free To X
+                 ufficiali nelle aree di servizio, con direzione e potenza
+  - Overpass    colonnine mappate su OpenStreetMap (riserva)
 
 Uso:  python3 scarica_percorso.py Cattolica Milano percorsi/cattolica_milano.csv
       (citta note nel dizionario sotto, oppure coordinate "lat,lon")
@@ -105,6 +107,54 @@ def kw_da_tag(tag):
     return best
 
 
+def proietta(punti, km_cum, lat, lon):
+    """Proietta (lat, lon) sulla geometria del percorso.
+    Restituisce (distanza m, km lungo il percorso, True se sta a destra).
+    In Italia si guida a destra: destra = carreggiata nella nostra direzione."""
+    best = None
+    cl = math.cos(math.radians(lat))
+    for k in range(len(punti) - 1):
+        (ya, xa), (yb, xb) = punti[k], punti[k + 1]
+        # coordinate locali in metri
+        ax, ay = (xa - lon) * cl * 111320, (ya - lat) * 110540
+        bx, by = (xb - lon) * cl * 111320, (yb - lat) * 110540
+        dx, dy = bx - ax, by - ay
+        l2 = dx * dx + dy * dy
+        t = 0 if l2 == 0 else max(0, min(1, -(ax * dx + ay * dy) / l2))
+        px, py = ax + t * dx, ay + t * dy
+        d = math.hypot(px, py)
+        if best is None or d < best[0]:
+            destra = (dx * (-ay) - dy * (-ax)) < 0   # punto (0,0) rispetto al segmento
+            best = (d, km_cum[k] + t * (km_cum[k + 1] - km_cum[k]), destra)
+    return best
+
+
+def colonnine_autostrade(punti, dist):
+    """Colonnine ufficiali Free To X dal sito viabilita di Autostrade per l'Italia."""
+    aree = scarica("https://viabilita.autostrade.it/json/colonnine.json")["listaAree"]
+    km_cum = [0.0]
+    for d in dist:
+        km_cum.append(km_cum[-1] + d / 1000)
+    trovate = []
+    for a in aree:
+        cols = a.get("colonnine") or []
+        if not cols or a.get("lat") is None:
+            continue
+        d, km, destra = proietta(punti, km_cum, a["lat"], a["lon"])
+        if d > 400 or not destra:       # lontana o sulla carreggiata opposta
+            continue
+        kw = 0
+        for c in cols:
+            num = "".join(ch for ch in c.get("modello", "").split("kW")[0] if ch.isdigit())
+            kw = max(kw, int(num) if num else 0)
+        if kw < 50:
+            continue
+        nome = f"{a['strada'].split()[0]} {a['nome'].title()} (Free To X)"
+        prezzo = 0.79 if kw >= 150 else 0.69     # stima: prezzo non pubblicato nei dati
+        trovate.append((km, nome, kw, prezzo, d))
+    return sorted(trovate)
+
+
 def colonnine(profilo):
     linea = ",".join(f"{p[1]:.5f},{p[2]:.5f}" for p in profilo[::2])
     query = (f"[out:json][timeout:180];"
@@ -145,16 +195,21 @@ def main():
         sys.exit(__doc__)
     da, a, uscita = coord(sys.argv[1]), coord(sys.argv[2]), sys.argv[3]
     print("Percorso (OSRM)...", file=sys.stderr)
-    profilo = ricampiona(*percorso_osrm(da, a))
+    punti, dist, dur = percorso_osrm(da, a)
+    profilo = ricampiona(punti, dist, dur)
     print(f"  {profilo[-1][0]:.1f} km, {len(profilo)} punti", file=sys.stderr)
     print("Altitudini (OpenTopoData)...", file=sys.stderr)
     quote = altitudini(profilo)
-    print("Colonnine (Overpass)...", file=sys.stderr)
-    cols = colonnine(profilo)
+    print("Colonnine (Autostrade per l'Italia)...", file=sys.stderr)
+    try:
+        cols = colonnine_autostrade(punti, dist)
+    except Exception as e:
+        print(f"  non disponibili ({e}), provo Overpass", file=sys.stderr)
+        cols = colonnine(profilo)
     print(f"  {len(cols)} colonnine DC >= 50 kW", file=sys.stderr)
 
     with open(uscita, "w") as f:
-        f.write(f"# {sys.argv[1]} -> {sys.argv[2]} | dati OpenStreetMap (ODbL)\n")
+        f.write(f"# {sys.argv[1]} -> {sys.argv[2]} | percorso OpenStreetMap (ODbL), colonnine Autostrade per l Italia\n")
         f.write("# P,km,quota_m,velocita_osrm_kmh\n")
         for p, q in zip(profilo, quote):
             f.write(f"P,{p[0]:.2f},{q:.0f},{p[3]:.0f}\n")
